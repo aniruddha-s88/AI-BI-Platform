@@ -115,7 +115,7 @@ The backend exposes routes for:
 
 ## Suggested GitHub Repository Description
 
-`AI-powered business intelligence platform for natural-language analytics, CSV exploration, dashboards, and automated insights.`
+`AI-powered business intelligence platform for natural-language analytics, CSV exploration and automated insights.`
 
 ## License
 
