@@ -1,6 +1,6 @@
 # AI BI Platform
 
-AI BI Platform is a full-stack business intelligence app that turns natural-language questions into charts, insights, and SQL-backed analytics. It supports both database-connected analysis and CSV-based exploration, with authentication, dashboards, uploads, and AI-generated recommendations.
+AI BI Platform is a full-stack business intelligence app that turns natural-language questions into charts, insights, and SQL-backed analytics. It supports both database-connected analysis and CSV-based exploration, with authentication,  uploads, and AI-generated recommendations.
 
 ## Project Overview
 
