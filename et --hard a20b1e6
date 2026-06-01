@@ -1,0 +1,10 @@
+[33m4dc1a1f[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m Remove env files
+[33mb22eca1[m Fix deployment configuration
+[33m60cacab[m Move requirements.txt to backend
+[33ma20b1e6[m[33m ([m[1;31morigin/main[m[33m)[m Add __init__.py to app package
+[33md279f92[m Refactor README for clarity and conciseness
+[33mcfe07b7[m Resolve README merge conflict
+[33ma2924d1[m AI-BI-Platform
+[33m4881ade[m Update README to remove dashboards reference
+[33m20f05b5[m Update GitHub repository description
+[33m08d8f1a[m Create README.md with project details and setup instructions
