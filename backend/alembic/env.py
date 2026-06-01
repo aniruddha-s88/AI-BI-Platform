@@ -6,8 +6,15 @@ from app.db import base_class
 from alembic import context
 import sys
 from pathlib import Path
+from dotenv import load_dotenv
+import os
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
+BASE_DIR = Path(__file__).resolve().parents[1]
+ENV_PROFILE = os.getenv("APP_ENV", "local").lower()
+profile_file = BASE_DIR / f".env.{ENV_PROFILE}"
+if profile_file.exists():
+    load_dotenv(profile_file, override=True)
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -24,6 +31,13 @@ if config.config_file_name is not None:
 from app.db.base import Base
 
 target_metadata = Base.metadata
+
+database_url = context.get_x_argument(as_dictionary=True).get("db_url")
+if not database_url:
+    from app.core.config import settings
+    database_url = settings.DATABASE_URL
+
+alembic_database_url = database_url.replace("%", "%%")
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -43,7 +57,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = database_url
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -62,6 +76,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    config.set_main_option("sqlalchemy.url", alembic_database_url)
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

@@ -6,7 +6,8 @@ from app.core.config import settings
 
 
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
+    schemes=["argon2", "bcrypt"],
+    default="argon2",
     deprecated="auto"
 )
 

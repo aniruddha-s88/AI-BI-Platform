@@ -29,6 +29,7 @@ function SmartDashboard() {
   const [mode, setMode] = useState("db")
   const [showSql, setShowSql] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showDataResults, setShowDataResults] = useState(false)
 
   const COLORS = [
@@ -400,10 +401,41 @@ function SmartDashboard() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-slate-50 to-slate-100 lg:flex-row">
+      <header className="border-b border-slate-200 bg-white px-4 py-4 shadow-sm lg:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-blue-600">Smart Analytics</p>
+            <h1 className="text-lg font-semibold text-slate-900">DataPulse AI</h1>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+            >
+              Menu
+            </button>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+            >
+              Dashboard
+            </button>
+          </div>
+        </div>
+      </header>
       
       {/* SIDEBAR */}
-      <aside className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-white border-r border-slate-200 transition-all duration-300 ease-in-out shadow-sm flex flex-col`}>
+      {mobileMenuOpen ? (
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      ) : null}
+
+      <aside className={`${sidebarOpen ? 'w-72' : 'w-20'} fixed inset-y-0 left-0 z-40 hidden bg-white border-r border-slate-200 transition-all duration-300 ease-in-out shadow-sm flex-col lg:static lg:flex ${mobileMenuOpen ? "flex translate-x-0" : "-translate-x-full lg:translate-x-0 lg:flex"}`}>
         
         {/* Logo & Toggle */}
         <div className="p-6 border-b border-slate-200 flex items-center justify-between">
@@ -526,7 +558,7 @@ function SmartDashboard() {
       <main className="flex-1 overflow-auto">
         
         {/* Header */}
-        <header className="bg-white border-b border-slate-200 px-8 py-6 shadow-sm">
+        <header className="bg-white border-b border-slate-200 px-4 py-4 shadow-sm sm:px-6 sm:py-6">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-2xl font-bold text-slate-800">Smart Analytics</h2>
             <p className="text-slate-600 mt-1">Ask questions and get instant insights from your data</p>
@@ -534,11 +566,11 @@ function SmartDashboard() {
         </header>
 
         {/* Content Area */}
-        <div className="p-8 max-w-7xl mx-auto space-y-6">
+        <div className="p-4 max-w-7xl mx-auto space-y-6 sm:p-6 lg:p-8">
           
           {/* Search Bar */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <div className="flex gap-3">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6">
+            <div className="flex flex-col gap-3 md:flex-row">
               <div className="flex-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <svg className="w-5 h-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -557,7 +589,7 @@ function SmartDashboard() {
               <button
                 onClick={handleAsk}
                 disabled={loading || !question.trim()}
-                className="px-8 py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center space-x-2"
+                className="inline-flex w-full items-center justify-center space-x-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-3.5 font-semibold text-white shadow-lg transition-all duration-300 hover:shadow-blue-500/50 hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100 md:w-auto"
               >
                 {loading ? (
                   <>
@@ -581,11 +613,11 @@ function SmartDashboard() {
 
           {/* KPIs */}
           {kpis.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {kpis.map((k, i) => (
                 <div
                   key={i}
-                  className="group relative bg-white rounded-2xl shadow-sm border border-slate-200 p-6 hover:shadow-lg hover:border-blue-200 transition-all duration-300 overflow-hidden"
+                  className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:border-blue-200 hover:shadow-lg sm:p-6"
                 >
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
                   
@@ -630,7 +662,7 @@ function SmartDashboard() {
           {/* Recommendations */}
           {recommendations.length > 0 && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center">
                     <svg className="w-6 h-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -645,7 +677,7 @@ function SmartDashboard() {
                 <span className="text-sm text-slate-500">{recommendations.length} actions</span>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   {recommendations.map((item, idx) => (
                     <div key={idx} className="rounded-xl border border-amber-100 bg-amber-50/70 p-4">
                       <div className="flex items-start space-x-3">
@@ -667,7 +699,7 @@ function SmartDashboard() {
           {/* SQL Query */}
           {sql && (
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                 <div className="flex items-center space-x-3">
                   <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                     <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">

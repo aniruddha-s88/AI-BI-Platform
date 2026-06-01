@@ -1,237 +1,240 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import api from "../api/api"
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  PieChart,
-  Pie
-} from "recharts"
 
 function Dashboard() {
   const navigate = useNavigate()
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const [question, setQuestion] = useState("")
-  const [results, setResults] = useState([])
-  const [sql, setSql] = useState("")
-  const [insights, setInsights] = useState([])
-  const [chartType, setChartType] = useState("table")
-  const [loading, setLoading] = useState(false)
-  const [uploadFile, setUploadFile] = useState(null)
-  const [uploading, setUploading] = useState(false)
-
-  const handleQuery = async () => {
-    if (!question.trim()) return
-
-    try {
-      setLoading(true)
-
-      const res = await api.post("/analytics/query", {
-        connection_id: 9,
-        question
-      })
-
-      const data = res.data.data
-
-      setResults(data.results || [])
-      setSql(data.generated_sql || "")
-      setInsights(data.insights || [])
-      setChartType(data.chart_type || "table")
-    } catch {
-      alert("Query failed")
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    const loadSummary = async () => {
+      try {
+        setLoading(true)
+        const res = await api.get("/database/summary")
+        setSummary(res.data?.data || null)
+      } catch (err) {
+        setError(err?.response?.data?.detail || "Failed to load dashboard")
+      } finally {
+        setLoading(false)
+      }
     }
+
+    loadSummary()
+  }, [])
+
+  const stats = summary?.stats || {
+    datasets: 0,
+    queries: 0,
+    insights: 0,
+    reports: 0
   }
 
-  const handleUploadCsv = async () => {
-    if (!uploadFile) {
-      alert("Please select a CSV file")
-      return
-    }
-
-    const formData = new FormData()
-    formData.append("file", uploadFile)
-
-    try {
-      setUploading(true)
-
-      await api.post("/upload/csv", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
-      })
-
-      navigate("/smart-dashboard?mode=csv")
-    } catch (err) {
-      alert(err?.response?.data?.detail || "Upload failed")
-    } finally {
-      setUploading(false)
-    }
-  }
+  const datasets = summary?.recent_datasets || []
+  const activity = summary?.recent_activity || []
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100">
-      <aside className="w-72 border-r border-white/10 bg-slate-950/95 p-6">
-        <h1 className="text-2xl font-bold tracking-tight">AI Analytics</h1>
+    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 lg:flex-row">
+      <header className="border-b border-slate-200 bg-white px-4 py-4 shadow-sm lg:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-cyan-700">AI BI Platform</p>
+            <h1 className="text-lg font-semibold">Dashboard</h1>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+            >
+              Menu
+            </button>
+            <button
+              onClick={() => navigate("/upload")}
+              className="rounded-lg bg-cyan-500 px-3 py-2 text-xs font-semibold text-slate-950"
+            >
+              Upload
+            </button>
+            <button
+              onClick={() => navigate("/smart-dashboard")}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700"
+            >
+              Smart
+            </button>
+          </div>
+        </div>
+      </header>
 
-        <nav className="mt-8 space-y-2 text-sm">
-          <button
-            className="block w-full rounded-xl bg-white/5 px-4 py-3 text-left font-medium hover:bg-white/10"
-            onClick={() => navigate("/dashboard")}
-          >
-            Dashboard
+      {mobileMenuOpen ? (
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="fixed inset-0 z-30 bg-slate-950/40 lg:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      ) : null}
+
+      <aside className={`fixed inset-y-0 left-0 z-40 w-72 flex-col border-r border-slate-200 bg-white shadow-sm transition-transform lg:static lg:flex ${mobileMenuOpen ? "flex translate-x-0" : "hidden -translate-x-full lg:translate-x-0 lg:flex"}`}>
+        <div className="border-b border-slate-200 p-6">
+          <p className="text-xs uppercase tracking-[0.3em] text-cyan-700">AI BI Platform</p>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Navigate datasets, uploads, and smart analysis from one place.
+          </p>
+        </div>
+
+        <nav className="space-y-2 p-4">
+          <button className="w-full rounded-xl bg-slate-900 px-4 py-3 text-left text-sm font-semibold text-white">
+            Overview
           </button>
           <button
-            className="block w-full rounded-xl bg-white/5 px-4 py-3 text-left font-medium hover:bg-white/10"
+            onClick={() => navigate("/upload")}
+            className="w-full rounded-xl px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+          >
+            Upload Dataset
+          </button>
+          <button
             onClick={() => navigate("/smart-dashboard")}
+            className="w-full rounded-xl px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
           >
             Smart Dashboard
           </button>
-          <button
-            className="block w-full rounded-xl bg-white/5 px-4 py-3 text-left font-medium hover:bg-white/10"
-            onClick={() => navigate("/upload")}
-          >
-            Upload Page
-          </button>
+        </nav>
+
+        <div className="mt-auto border-t border-slate-200 p-4">
           <button
             onClick={() => {
               localStorage.removeItem("token")
               window.location.href = "/login"
             }}
-            className="mt-8 text-left text-rose-400 hover:text-rose-300"
+            className="w-full rounded-xl px-4 py-3 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
           >
             Logout
           </button>
-        </nav>
+        </div>
       </aside>
 
-      <main className="flex-1 overflow-auto p-8">
-        <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-          <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20">
-            <h2 className="text-xl font-semibold">Ask your database</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Query your connected database from here.
-            </p>
+      <main className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+          <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.14),transparent_35%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.12),transparent_35%)]" />
+            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-cyan-700/80">Overview</p>
+                <h2 className="mt-2 max-w-3xl text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl lg:text-5xl">
+                  {loading ? "Loading your workspace..." : "Your data workspace, live and ready."}
+                </h2>
+                <p className="mt-4 max-w-2xl text-sm text-slate-600">
+                  {error
+                    ? error
+                    : "Upload datasets, switch to Smart Dashboard, and analyze everything from a single control center."}
+                </p>
+              </div>
 
-            <div className="mt-5 flex gap-3">
-              <input
-                value={question}
-                onChange={(e) => setQuestion(e.target.value)}
-                placeholder="Ask anything about your data..."
-                className="flex-1 rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm outline-none placeholder:text-slate-500 focus:border-cyan-400/50"
-              />
-              <button
-                onClick={handleQuery}
-                className="rounded-xl bg-indigo-500 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-400"
-              >
-                {loading ? "Thinking..." : "Ask"}
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <button
+                  onClick={() => navigate("/upload")}
+                  className="w-full rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 sm:w-auto"
+                >
+                  Add Dataset
+                </button>
+                <button
+                  onClick={() => navigate("/smart-dashboard")}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto"
+                >
+                  Open Smart Dashboard
+                </button>
+              </div>
             </div>
-
-            {sql && (
-              <div className="mt-6 rounded-2xl bg-slate-950/80 p-4 text-green-400">
-                <p className="mb-2 text-sm">Generated SQL</p>
-                <pre className="overflow-x-auto text-sm">{sql}</pre>
-              </div>
-            )}
-
-            {insights.length > 0 && (
-              <div className="mt-6 rounded-2xl bg-cyan-400/10 p-5">
-                <h3 className="mb-3 text-lg font-semibold text-cyan-100">AI Insights</h3>
-                <ul className="list-disc space-y-2 pl-5 text-sm text-cyan-50/90">
-                  {insights.map((i, idx) => (
-                    <li key={idx}>{i}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {results.length > 0 && (
-              <div className="mt-6 overflow-auto rounded-2xl border border-white/10 bg-slate-950/50">
-                <table className="w-full text-sm">
-                  <thead className="bg-white/5">
-                    <tr>
-                      {Object.keys(results[0]).map((key) => (
-                        <th key={key} className="border-b border-white/10 px-4 py-3 text-left">
-                          {key}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((row, i) => (
-                      <tr key={i} className="border-b border-white/10">
-                        {Object.values(row).map((val, j) => (
-                          <td key={j} className="px-4 py-3 text-slate-300">
-                            {String(val)}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {results.length > 0 && Object.keys(results[0]).length >= 2 && (
-              <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
-                <h3 className="mb-4 text-base font-semibold">Visualization</h3>
-                {chartType === "bar" && (
-                  <BarChart width={600} height={300} data={results}>
-                    <XAxis dataKey={Object.keys(results[0])[0]} />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey={Object.keys(results[0])[1]} />
-                  </BarChart>
-                )}
-                {chartType === "pie" && (
-                  <PieChart width={400} height={300}>
-                    <Pie
-                      data={results}
-                      dataKey={Object.keys(results[0])[1]}
-                      nameKey={Object.keys(results[0])[0]}
-                      outerRadius={100}
-                      label
-                    />
-                  </PieChart>
-                )}
-              </div>
-            )}
           </section>
 
-          <section className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/20">
-            <h2 className="text-xl font-semibold">Upload CSV</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Upload the file here, then continue to Smart Dashboard to ask questions with a prompt.
-            </p>
+          <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: "Datasets", value: stats.datasets, hint: "Connected sources" },
+              { label: "Queries", value: stats.queries, hint: "Prompt history" },
+              { label: "Insights", value: stats.insights, hint: "Recent activity" },
+              { label: "Reports", value: stats.reports, hint: "Derived from usage" }
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <p className="text-sm text-slate-500">{item.label}</p>
+                <p className="mt-3 text-3xl font-semibold text-slate-950">{item.value}</p>
+                <p className="mt-2 text-xs text-slate-500">{item.hint}</p>
+              </div>
+            ))}
+          </section>
 
-            <div className="mt-5 rounded-2xl border border-dashed border-white/15 bg-slate-950/50 p-5">
-              <label className="block text-sm font-medium text-slate-300">CSV file</label>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                className="mt-3 block w-full text-sm text-slate-300 file:mr-4 file:rounded-xl file:border-0 file:bg-cyan-500 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-950 hover:file:bg-cyan-400"
-              />
-              <p className="mt-3 text-xs text-slate-500">
-                {uploadFile?.name || "No file selected"}
-              </p>
+          <section className="mt-6 grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-950">Recent Datasets</h3>
+                  <p className="mt-1 text-sm text-slate-500">Latest connected sources.</p>
+                </div>
+                <button
+                  onClick={() => navigate("/upload")}
+                  className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Upload New
+                </button>
+              </div>
+
+              {loading ? (
+                <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">
+                  Loading datasets...
+                </div>
+              ) : datasets.length > 0 ? (
+                <div className="mt-5 space-y-3">
+                  {datasets.map((dataset) => (
+                    <div
+                      key={dataset.name}
+                      className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div>
+                        <p className="font-semibold text-slate-900">{dataset.name}</p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {dataset.rows} · Updated {dataset.updated}
+                        </p>
+                      </div>
+                      <span className="inline-flex w-fit rounded-full bg-cyan-100 px-3 py-1 text-xs font-semibold text-cyan-800">
+                        {dataset.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-500">
+                  No datasets yet. Upload one to start tracking it here.
+                </div>
+              )}
             </div>
 
-            <button
-              onClick={handleUploadCsv}
-              disabled={uploading}
-              className="mt-4 rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {uploading ? "Uploading..." : "Upload and Continue"}
-            </button>
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-slate-950">Recent Activity</h3>
+              <p className="mt-1 text-sm text-slate-500">
+                The latest questions and queries from your workspace.
+              </p>
 
-            <div className="mt-6 rounded-2xl bg-white/5 p-4 text-sm text-slate-300">
-              After upload, go to Smart Dashboard and enter your prompt there to generate AI results.
+              <div className="mt-5 space-y-3">
+                {activity.length > 0 ? (
+                  activity.map((entry) => (
+                    <div
+                      key={`${entry.label}-${entry.meta}`}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700"
+                    >
+                      <p className="font-medium text-slate-900">{entry.label}</p>
+                      <p className="mt-1 text-xs text-slate-500">{entry.meta}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                    No recent queries yet. Ask something in Smart Dashboard.
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         </div>

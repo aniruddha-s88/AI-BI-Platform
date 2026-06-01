@@ -18,6 +18,7 @@ from app.services.database_service import (
 from app.models.database_connection import (
     DatabaseConnection
 )
+from app.models.query_history import QueryHistory
 
 from app.utils.response import success_response
 
@@ -54,6 +55,58 @@ def list_connections(
             }
             for connection in connections
         ]
+    )
+
+
+@router.get("/summary")
+def dashboard_summary(
+    db: Session = Depends(get_db),
+    current_user=Depends(get_current_user)
+):
+    connections = db.query(DatabaseConnection).filter(
+        DatabaseConnection.user_id == current_user.id
+    ).all()
+
+    query_count = db.query(QueryHistory).filter(
+        QueryHistory.user_id == current_user.id
+    ).count()
+
+    recent_queries = db.query(QueryHistory).filter(
+        QueryHistory.user_id == current_user.id
+    ).order_by(
+        QueryHistory.created_at.desc()
+    ).limit(5).all()
+
+    recent_datasets = []
+    for connection in connections[:5]:
+        recent_datasets.append({
+            "name": connection.database_name or f"{connection.db_type.title()} Connection",
+            "rows": "Connected",
+            "status": "Ready",
+            "updated": connection.created_at.strftime("%b %d, %Y") if connection.created_at else "Recently"
+        })
+
+    if not recent_datasets:
+        recent_datasets = []
+
+    return success_response(
+        message="Dashboard summary fetched successfully",
+        data={
+            "stats": {
+                "datasets": len(connections),
+                "queries": query_count,
+                "insights": len(recent_queries),
+                "reports": max(query_count // 2, 0),
+            },
+            "recent_datasets": recent_datasets,
+            "recent_activity": [
+                {
+                    "label": q.question,
+                    "meta": q.created_at.strftime("%b %d, %Y") if q.created_at else "Recently"
+                }
+                for q in recent_queries
+            ],
+        }
     )
 
 
